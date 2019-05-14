@@ -5,20 +5,49 @@ from re import match
 
 class Node:
 
-    def __init__(self, station_ID, limitation=True,
-                 interchange=None, station_name=None):
+    def __init__(self, station_ID, interchange, limitation, station_name):
         self.station_ID = station_ID
-        self.interchange = [line1]
+        self.interchange = interchange
         self.limitation = limitation
         self.station_name = station_name
 
 
 class Graph:
 
-    def __init__(self, start=None, end=None):
-        self.nodes = {}         # {line:{station:node}}
-        self.start = start
-        self.end = end
+    def __init__(self, metrolines, start, end):
+        self.nodes = set_nodes(metrolines, start, end)         # {line:{station:node}}
+        self.start_node = self.nodes[start[0]][start[1]]
+        self.end_node = self.nodes[end[0]][end[1]]
+
+    def find_way():
+        way = None
+        return way
+
+
+def get_station_data(limitation, metroline, station, start, end):
+    interchange = [metroline]
+    station_ID = station.split(":")[0]
+    station_name = station.split(":")[1]
+    if ":Conn:" in station:
+        interchange += station.split(":Conn: ")[1:]
+    if (metroline == start[0] and station_ID == start[1]) or (metroline == end[0] and station_ID == end[1]):
+        limitation = False
+
+    return station_ID, limitation, interchange, station_name
+
+
+def set_nodes(metrolines, start, end):
+    nodes = {}
+    interchange = []
+    for metroline in metrolines:
+        for station in metrolines[metroline]:
+            station_ID, limitation, interchange, station_name = get_station_data(True, metroline, station, start, end)
+            node = Node(station_ID, limitation, interchange, station_name)
+            if metroline not in nodes :
+                nodes[metroline] = {station_ID: node}
+            else:
+                nodes[metroline].update({station_ID: node})
+    return nodes
 
 
 def get_metrolines(lines):
@@ -30,7 +59,6 @@ def get_metrolines(lines):
             metrolines[metroline] = []
         elif not line.startswith("START=") and not line.startswith("END=") and not line.startswith("TRAINS") and line:
             metrolines[metroline].append(line)
-
     return metrolines
 
 
@@ -86,7 +114,8 @@ def main():
     lines = read_file(file_name)
     start, end, trains_number = get_data(lines)
     metrolines = get_metrolines(lines)
-    print(metrolines)
+    graph = Graph(metrolines, start, end)
+    print(graph.nodes)
 
 
 if __name__ == "__main__":
